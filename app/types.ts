@@ -5,6 +5,7 @@ export interface RSSItem {
     content?: string;
     contentSnippet?: string;
     isoDate?: string;
+    tags?: string[];
     [key: string]: any;
 }
 

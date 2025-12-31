@@ -1,12 +1,23 @@
 import { RSSItem } from '@/app/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ExternalLink } from 'lucide-react';
+import { stringToColor } from '@/lib/colorUtils';
 
 interface FeedCardProps {
     item: RSSItem;
 }
 
+import { useStore } from '@/store/useStore';
+import { Star, Clock, CheckCircle } from 'lucide-react';
+import { clsx } from 'clsx';
+
 export default function FeedCard({ item }: FeedCardProps) {
+    const { toggleFavorite, toggleReadLater, markAsRead, favorites, readLater, history, tags } = useStore();
+    const itemTags = item.link ? (tags[item.link] || item.tags) : item.tags;
+    const isFavorite = item.link ? favorites.includes(item.link) : false;
+    const isReadLater = item.link ? readLater.includes(item.link) : false;
+    const isRead = item.link ? history.includes(item.link) : false;
+
     // Try to parse an image from the content if enclosure is missing
     const getImage = () => {
         if (item.enclosure?.url) return item.enclosure.url;
@@ -51,18 +62,57 @@ export default function FeedCard({ item }: FeedCardProps) {
                     {item.contentSnippet?.replace(/<[^>]+>/g, '') || 'No summary available.'}
                 </p>
 
+                {itemTags && itemTags.length > 0 && (
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        {itemTags.map(tag => (
+                            <span
+                                key={tag}
+                                className="rounded-md px-2 py-0.5 text-xs font-medium"
+                                style={{ backgroundColor: stringToColor(tag), color: '#333' }}
+                            >
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
                 <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-800">
-                    <span>
-                        {date ? formatDistanceToNow(date, { addSuffix: true }) : 'Unknown date'}
-                    </span>
-                    <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 hover:text-orange-600 dark:hover:text-orange-400"
-                    >
-                        Read <ExternalLink className="h-3 w-3" />
-                    </a>
+                    <div className="flex gap-3">
+                        <span>
+                            {date ? formatDistanceToNow(date, { addSuffix: true }) : 'Unknown date'}
+                        </span>
+                        {isRead && (
+                            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                <CheckCircle className="h-3 w-3" /> Read
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => item.link && toggleFavorite(item.link)}
+                            className={clsx("transition-colors hover:text-orange-500", isFavorite ? "text-orange-500 fill-orange-500" : "text-gray-400")}
+                            title="Toggle Favorite"
+                        >
+                            <Star className={clsx("h-4 w-4", isFavorite && "fill-current")} />
+                        </button>
+                        <button
+                            onClick={() => item.link && toggleReadLater(item.link)}
+                            className={clsx("transition-colors hover:text-blue-500", isReadLater ? "text-blue-500 fill-blue-500" : "text-gray-400")}
+                            title="Read Later"
+                        >
+                            <Clock className={clsx("h-4 w-4", isReadLater && "fill-current")} />
+                        </button>
+                        <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => item.link && markAsRead(item.link)}
+                            className="flex items-center gap-1 hover:text-orange-600 dark:hover:text-orange-400"
+                        >
+                            Read <ExternalLink className="h-3 w-3" />
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
